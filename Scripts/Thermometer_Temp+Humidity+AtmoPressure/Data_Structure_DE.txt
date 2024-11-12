@@ -1,0 +1,59 @@
+// Einbindungshierarchie \\
+main.ino
+    └── DataLogger.h (#pragma once)
+        └── data_structures.h (#pragma once)
+
+DataLogger.cpp
+    └── DataLogger.h
+        └── data_structures.h
+
+Der Arduino-Build-Prozess wird dann:
+- Alle .ino Dateien zusammenführen
+- Die Header-Dateien wo nötig einbinden (geschützt durch #pragma once)
+- Die .cpp Dateien kompilieren und mit dem .ino-Code verlinken
+-------------------------------------------------------------------
+// Datensatz- Größe und Inhalt \\
+Beispiel Datensatz:
+Timestamp: String "YYYY-MM-DD HH:MM:SS" = 19 Bytes
+Temperatur: 	Float = 4 Bytes
+Luftfeuchte:	Float = 4 Bytes
+Luftdruck:	Int   = 4 Bytes
+--------------------------------
+Gesamt: 		31 Bytes
+
+Optimierter Datensatz:
+
+Timestamp:
+→ Unix timestamp (4 Bytes) oder
+→ Komprimiert: 	UInt8 Jahr-2000 (1 Byte), 
+		UInt8 Monat (1 Byte), 
+		UInt8 Tag (1 Byte), 
+		UInt8 Stunde (1 Byte), 
+		UInt8 Minute (1 Byte) = 5 Bytes total
+
+Temperatur: Float mit einer Nachkommastelle
+→ Int16 * 0.1 (-3276.8 bis +3276.7°C) = 2 Bytes
+
+Luftfeuchte: Float mit einer Nachkommastelle
+→ UInt16 * 0.1 (0 bis 100%) = 2 Bytes
+
+Luftdruck: in hPa
+→ UInt16 (0-65535) = 2 Bytes
+
+Status-Flag: 1 Byte
+
+
+Gesamtgröße pro optimiertem Datensatz: 12 Bytes
+Bei 4 Messungen pro Stunde: 48 Bytes
+
+
+SRAM (2KB = 2048 Bytes):
+2048 / 48 = ~42 Stunden Puffer im RAM
+
+
+EEPROM (1KB = 1024 Bytes):
+1024 / 48 = ~21 Stunden Puffer
+--------------------------------------------------------------------
+// Lebensspanne \\
+EEPROM
+24 Schreibvorgänge / Tag = 4166 Tage (11,4J) Lebensspanne
